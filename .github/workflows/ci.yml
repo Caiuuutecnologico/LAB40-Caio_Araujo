@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-and-container:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Configure Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies reproducibly
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run automated tests
+        run: npm test
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Run application smoke test
+        run: npm run test:smoke
+
+      - name: Build Docker image
+        run: docker build --pull -t lab40:${{ github.sha }} .
+
+      - name: Run container
+        run: docker run --detach --name lab40-smoke --publish 3000:3000 lab40:${{ github.sha }}
+
+      - name: Test container endpoints
+        env:
+          SMOKE_BASE_URL: http://127.0.0.1:3000
+        run: npm run test:smoke
+
+      - name: Stop container
+        if: always()
+        run: docker rm --force lab40-smoke || true
+
+      - name: Save image artifact
+        run: docker save lab40:${{ github.sha }} --output lab40-${{ github.sha }}.tar
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: lab40-image-${{ github.sha }}
+          path: lab40-${{ github.sha }}.tar
+          if-no-files-found: error
+          retention-days: 14

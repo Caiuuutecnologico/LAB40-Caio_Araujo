@@ -6,7 +6,9 @@ const implemented = true;
 
 function parseIsoDate(value, fieldName) {
   if (typeof value !== "string") {
-    throw new Error(`O campo ${fieldName} deve ser uma data no formato AAAA-MM-DD.`);
+    throw new Error(
+      `O campo ${fieldName} deve ser uma data no formato AAAA-MM-DD.`,
+    );
   }
 
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -21,7 +23,11 @@ function parseIsoDate(value, fieldName) {
   date.setUTCHours(0, 0, 0, 0);
   date.setUTCFullYear(year, month - 1, day);
 
-  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
     throw new Error(`O campo ${fieldName} não contém uma data válida.`);
   }
 
@@ -30,7 +36,9 @@ function parseIsoDate(value, fieldName) {
 
 function execute(input) {
   if (input === null || typeof input !== "object" || Array.isArray(input)) {
-    throw new Error("A entrada deve ser um objeto com dataInicial e dataFinal.");
+    throw new Error(
+      "A entrada deve ser um objeto com dataInicial e dataFinal.",
+    );
   }
 
   const inicio = parseIsoDate(input.dataInicial, "dataInicial");
@@ -45,5 +53,5 @@ module.exports = {
   name: "Calculadora de dias entre datas",
   description: "Calcula diferença absoluta em dias entre duas datas.",
   implemented,
-  execute
+  execute,
 };
