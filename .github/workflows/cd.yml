@@ -1,0 +1,43 @@
+name: CD simulado
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-delivery:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build delivery image
+        run: docker build --pull -t lab40:${{ github.sha }} .
+
+      - name: Create delivery record
+        shell: bash
+        run: |
+          {
+            echo "Repository=${GITHUB_REPOSITORY}"
+            echo "Reference=${GITHUB_REF}"
+            echo "SHA=${GITHUB_SHA}"
+            echo "Tag=lab40:${GITHUB_SHA}"
+          } > deployment-record.txt
+
+      - name: Export Docker image
+        run: docker save lab40:${{ github.sha }} --output lab40-${{ github.sha }}.tar
+
+      - name: Upload simulated delivery artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: lab40-delivery-record
+          path: |
+            lab40-${{ github.sha }}.tar
+            deployment-record.txt
+          if-no-files-found: error
+          retention-days: 30
